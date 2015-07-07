@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['檔案大小', 'Upload-2Nodes', 'Upload-3Nodes', 'Parser-2Node', 'Parser-3Node', 'Parser-3Node-after-balance','Parser-3Node-rep-3', 'NonMR'],
+          ['1.5G', 26.9, 0, 125.6, 0, 0, 0, 0],
+          ['54G',  0, 770, 0, 3335, 3162, 2176, 2676]
+        ]);
+
+        var options = {
+          title: 'Statistics',
+          hAxis: {title: 'Queue Size', titleTextStyle: {color: 'red'}}
+        };
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

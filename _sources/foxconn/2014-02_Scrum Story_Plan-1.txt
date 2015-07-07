@@ -1,0 +1,91 @@
+============================
+2014-02 Scrum Story Plan
+============================
+
+海量資料運算平台及開發環境建立
+===================================
+
+* 系統架構( `link <./_images/UserBAnalysisArch.jpg>`_ )
+
+1. [v] 運算平台建置
+ * Hadoop
+ * Zookeeper
+ * HBase
+ * Sqoop
+
+2. [-] 部署及管理工具
+節點管理工具
+ * [v] Hadoop Qulik Delopy(dehas)
+  * 快速建置Hadoop工具
+ * [v] serviceCtrl
+  * 啟動/關閉全部服務
+ * serviceManager
+  * 針對單一節點服務
+ * DeploySlave
+  * deploy hadoop
+  * deploy zookeeper
+  * deploy hbase
+
+3. [v] 開發環境建立
+ * Hadoop 開發及編譯環境
+  * 本機端開發、測試後，透過 ``autoCompileHadoop.sh`` 編譯成jar檔，供hadoop cluster執行
+ * HBase 開發及編譯環境
+  * 本機端開發、測試及執行
+
+4. 備援機制
+ * HDFS
+ * HBase 
+
+
+
+Story Task 定義
+===================
+
+目標：OTA報表分析- MySQL架構
+
+* 任務分析
+ * [1.0] 任務說明及目標訂定
+
+* Apache log parser
+ * [1.0] log 格式分析及定義
+ * [1.0] log 擷取所需要的資料欄位 [stage1]
+ * [1.0] 資料整理及計算，並輸出 [stage2]
+ * [1.0] 筆數驗證及debug
+
+* 運算結果輸出至MySQL
+ * [0.5] MySQL環境及資料欄位設定
+ * [0.5] 將parser結果對應到MySQL欄位 [stage3]
+
+* 執行及驗證程式
+ * [2.0] 從資料來源執行及驗證自動執行的deamon
+ 
+
+待討論及TODO
+========================
+
+* 資料搬移問題：下載OSS上的日誌是採用何種Protocol
+ * 解：此一階段暫不考慮此一問題
+
+
+Demo
+===========
+
+1. 日誌原始檔 -> Java Parser -> 產生輸出結果
+ * Output Format: (AccessTime, IP, idOrder, RequestFilePath, downloadState, Quantity)
+ * 此一輸出格式，也為了MR運算而設計
+ * 為了驗證不同格式也可產生正常結果，Rong的測試日誌格式與OTA日誌有些許落差，一併放入計算的資料夾一起計算
+ * 算完的raw data會移到finished_rawdata資料夾
+
+2. 輸出結果 -> Java MySQL Updater -> MySQL更新最終結果
+ * 更新完的result raw data會移到finished_import_mysql資料夾
+
+
+Notes
+==========
+
+* MySQL權限開啟
+GRANT ALL ON piwik.* TO piwiker@192.168.100.200 identified by 'piwiker@foxconn';
+FLUSH PRIVILEGES;
+
+
+

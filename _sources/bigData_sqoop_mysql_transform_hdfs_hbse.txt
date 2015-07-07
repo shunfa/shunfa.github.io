@@ -1,0 +1,234 @@
+===========================================================================
+利用Sqoop將MySQL資料庫表單轉移至HDFS、HBase過程 (以Piwik資料庫為例)
+===========================================================================
+
+前置作業
+===========
+1)  安裝Hadoop，並啟動。(可透過 `QuickDeployHadoop <./_packages/hadoop/QuickDeployHadoop-2013-12-19.tar.gz>`_ 建立)
+#)  安裝zookeeper，並啟動。
+#)  安裝Hbase，並啟動。
+#)  安裝MySQL。(JDBC也要裝，資料庫管理可搭配phpmyadmin服用)
+#)  安裝Sqoop。
+#)  安裝Hive。
+
+*QuickDeployHadoop: 下載、解壓、執行install即可，已經包含自行編譯過的64bit版本之Hadoop*
+
+本文所使用的各套件版本
+=======================
+* Hadoop: 2.2.0
+* Zookeeper: 3.4.5
+* Hbase: 0.96.1.1-hadoop2
+* Sqoop: 1.4.4
+* Hive: 0.12.0
+* MySQL: 5.5.34
+* `懶人包下載 <./_packages/hadoop/hadoop_apps_2014-01-22.tar.gz>`_ (含zookeeper, hbase, sqoop，解壓至 ``/home/hadoop/`` 後還需要作細部設定修正)
+
+*懶人包來自虛擬機器*
+
+目錄結構及管理頁面
+====================
+
+本機目錄
+------------------
+* Hadoop安裝目錄：/opt/hadoop-2.2.0-quick/
+*  其他相關套件安裝路徑：/home/hadoop/apps
+
+
+HDFS
+--------------
+* Hbase: /hbase
+* Hive: /user/hive
+
+管理頁面
+-------------------
+* Hadoop: http://nosql-test-a:50070/
+* Hbase: http://nosql-test-a:60010/
+ 
+安裝Sqoop
+=============
+1. 下載解壓縮至/home/hadoop/apps/
+2. 開始設定
+
+設定
+------------
+
+sqoop-env.sh
+~~~~~~~~~~~~~~~~
+
+**$ cp $SQOOP_HOME/conf/sqoop-env-template.sh $SQOOP_HOME/conf/sqoop-env.sh**
+
+* 修改成以下內容：
+
+.. code-block:: ..
+
+  export HADOOP_COMMON_HOME=/opt/hadoop-2.2.0-quick
+  export HADOOP_MAPRED_HOME=/opt/hadoop-2.2.0-quick/share/hadoop/mapreduce
+  export HBASE_HOME=/home/hadoop/apps/hbase-0.96.1.1-hadoop2
+  export HIVE_HOME=/home/hadoop/apps/hive-0.12.0
+  export ZOOCFGDIR=/home/hadoop/apps/zookeeper-3.4.5/conf
+
+
+.. 安裝Hive
+  =============
+
+
+
+啟動所有服務，jps確認服務狀態
+================================
+
+.. code-block:: ..
+
+  hadoop@nosql-test-a:/opt$ jps
+  2719 ResourceManager
+  20837 Jps
+  2221 DataNode
+  3849 HMaster
+  2981 NodeManager
+  3580 JobHistoryServer
+  4122 HRegionServer
+  1932 NameNode
+  2544 SecondaryNameNode
+  3671 QuorumPeerMain
+
+
+將Piwik資料匯入MySQL
+=======================
+* 因為 ``phpmyadmin`` 不支援大檔匯入，而從piwik匯出的資料庫檔案又很大，測試時需要在測試的機器上進行測試，且不是每個人都像我一樣需要透過友善介面匯入資料庫，此時，mysql 的 ``source`` 就變得很重要了！
+  
+* source 用法
+
+.. code-block:: ..
+
+  use testDB;
+  source /home/shunfa/testtable.sql
+
+* 修改MySQL設定檔
+ * `vim /etc/mysql/my.cnf` 的 `bind-address`
+
+使用Sqoop
+=============
+a) 將資料匯入HDFS
+b) 將資料匯入HBase
+
+將資料匯入HDFS
+-----------------------------
+* 將資料庫表單內容匯入至HDFS上，其中 ``piwik`` 為資料庫名稱， ``piwik_log_visit`` 為表單名稱。
+ * ``-p`` 指令可以透過終端機輸入密碼或透過 ``--password-file my-sqoop-password`` 執行
+
+.. code-block:: ..
+
+  $ bin/sqoop import --connect jdbc:mysql://nosql-test-a/piwik --username root --password your_pw --table piwik_log_visit
+  
+* 確認是否匯入成功
+
+.. code-block:: ..
+
+  hadoop@nosql-test-a:~/apps/sqoop-1.4.4$ hadoop fs -ls
+  Found 4 items
+  drwxr-xr-x   - hadoop supergroup          0 2014-01-22 11:15 piwik_log_link_visit_action
+  drwxr-xr-x   - hadoop supergroup          0 2014-01-22 08:11 piwik_log_visit
+  drwxr-xr-x   - hadoop supergroup          0 2014-01-22 11:13 piwik_log_visit_1
+  drwxr-xr-x   - hadoop supergroup          0 2014-01-22 09:52 piwik_option
+
+
+
+將資料匯入HBase
+----------------------------
+* 將資料庫表單內容匯入至HBase上，其中 ``piwik`` 為資料庫名稱， ``piwik_log_visit`` 為表單名稱， ``hbase_test_table`` 為hbase上的表單名稱， ``test_table_col1`` 為HBase上的column-family名稱， ``idvisit`` 為 ``piwik_log_visit`` 表單中的key值。
+
+.. code-block:: ..
+
+  bin/sqoop import \
+  --connect jdbc:mysql://nosql-test-a/piwik \
+  --table ``piwik_log_visit`` \
+  --username root --password ``your_pw`` \
+  --hbase-table hbase_test_table \ 
+  --column-family ``test_table_col1`` \
+  --hbase-row-key idvisit --hbase-create-table
+
+*註：不支援斷行、MySQL位址不支援Hostname*
+
+* 確認是否匯入成功
+
+.. code-block:: ..
+
+  $ bin/hbase shell
+  hbase(main):001:0> list
+  hbase_test_table                                                                                                                       
+  test                                                                                                                                   
+  2 row(s) in 2.2200 seconds
+
+  => ["hbase_test_table", "test"]
+
+* 刪除Hbase表單
+
+.. code-block:: ..
+
+  disable 'test'
+  drop 'test'
+
+Sqoop 其他
+------------------------
+* append mode：指的是，當你的資料庫內容只有新增一些row，而其他原本存在的row沒有被修改過，則可使用此模式新增新的row。
+
+* Sharing the Metastore Between Sqoop Clients：其他機器也可以使用相同的Sqoop環境
+
+
+
+Hortonwork版本參考( `link <./_images/hortonworks_asparagus20a.png>`_ )
+------------------------------------------
+
+.. image::./_images/hortonworks_asparagus20a.png
+
+
+
+關於MySQL
+--------------------------
+
+MYSQL資料表最大能達到多少
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ref: http://mysqlwp.com/?page_id=29
+
+.. | 作業系統	                檔案大小限制
+ | Linux 2.2-Intel 32-bit	2GB (LFS: 4GB)
+ | Linux 2.4+			(using ext3 filesystem) 4TB
+ | Solaris 9/10	16TB
+ | NetWare w/NSS filesystem	8TB
+ | win32 w/ FAT/FAT32		2GB/4GB
+ | win32 w/ NTFS		2TB（可能更大）
+ | MacOS X w/ HFS+		2TB
+
+
+驗證區
+==============
+
+驗證MySQL的資料筆數與HBase是否一樣，分別如下：
+
+.. csv-table:: MySQL V.S. HBase資料筆數
+   :header: "Table Name", "MySQL", "HBase"
+   :widths: 20, 10, 10
+
+   "piwik_log_action", "64,189", "64,189"
+   "piwik_log_link_visit_action", "66,761", "66,761"
+
+
+
+
+小結
+=======
+
+1) Hadoop Ecosystem很大，除了安裝Hadoop外，還需要其他套件配合才有辦法發揮其效果，日後佈署上或許可以花些時間寫自動化安裝、佈署、管理工具或透過佈署虛擬機器的方式建置，以減少系統配置時間。
+#) Sqoop有支援Script方式匯入資料庫相關Data，可提昇資料轉移效率。
+
+
+FAQ
+=======
+* 為什麼 ``Hbase`` 下指令時，會有 ``SLF4J: Class path contains multiple SLF4J bindings.``
+ * 解：把 ``${Hbase}/lib/slf4j-log4j12-*.jar`` 移掉即可。
+ * 原因：Hadoop也有相同檔案，執行時JVM會發現有重複的jar檔被呼叫使用。
+
+
+
+*last update: 2014-02-07*
+

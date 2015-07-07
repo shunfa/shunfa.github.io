@@ -1,0 +1,50 @@
+Linux Super Notes
+=================================
+
+----------
+
+- 修改網路介面
+ - /etc/networking/interface
+
+- 重新抓取eth編號可以清空或是直接設定以下檔案
+ - /etc/udev/rules.d/70-persistent-net.rules
+
+- Ubuntu LAMP
+
+| $ sudo tasksel install lamp-server
+| $ sudo apt-get install tasksel
+
+- 修改hostname
+
+| vim /etc/hostname
+| vim /etc/hosts
+| /etc/init.d/hostname.sh
+
+
+
+MySQL
+-------------
+
+ * mysql -u root -p mysql
+
+ * source 用法
+
+| use testDB;
+| source /home/shunfa/testtable.sql
+
+
+Eclipse
+-----------
+* http://eclipse-color-theme.github.com/update
+
+
+Pure Muchines
+------------------------------
+
+ubuntu-server(12.04)
+^^^^^^^^^^^^^^^^^^^^^^^^
+ * openssh
+ * lamp
+ * phpmyadmin
+ * shunfa@fxxxxxx
+ * JDBC(sudo apt-get install libmysql-java)

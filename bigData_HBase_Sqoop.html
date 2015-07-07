@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>HBase及Sqoop安裝使用 &mdash; shunfaDOC 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="shunfaDOC 1.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">shunfaDOC 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">HBase及Sqoop安裝使用</a><ul>
+<li><a class="reference internal" href="#sqoop-notes-1-4-4">Sqoop Notes(1.4.4)</a></li>
+<li><a class="reference internal" href="#todo">Todo</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/bigData_HBase_Sqoop.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="hbasesqoop">
+<h1>HBase及Sqoop安裝使用<a class="headerlink" href="#hbasesqoop" title="Permalink to this headline">¶</a></h1>
+<p>安裝筆記：
+* 環境：Java
+* 安裝Hadoop
+* 安裝Zookeeper
+* 安裝Hbase</p>
+<p>啟動：
+* 啟動Hadoop
+* 啟動Zookeeper
+* 啟動Hbase</p>
+<p>管理：
+* Hadoop: 50070
+* JobHistory: 19888
+* Hbase: 60010</p>
+<p>執行：</p>
+<p>Hbase</p>
+<p>bin/hbase shell
+列出表單：list
+scan &#8216;hbase_test_table&#8217;
+get &#8216;hbase_test_table&#8217;, &#8216;9&#8217;
+count &#8216;piwik_archive_numeric_2014_01&#8217;</p>
+<div class="section" id="sqoop-notes-1-4-4">
+<h2>Sqoop Notes(1.4.4)<a class="headerlink" href="#sqoop-notes-1-4-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Hadoop不需要啟動，只需要備妥相關libraries及設定檔。</li>
+<li>JDBC安裝，</li>
+<li>bin/sqoop import &#8211;connect <a class="reference external" href="jdbc:mysql://192.168.57.101/piwik">jdbc:mysql://192.168.57.101/piwik</a> &#8211;username root &#8211;password <a class="reference external" href="mailto:shunfa&#37;&#52;&#48;foxconn">shunfa<span>&#64;</span>foxconn</a> &#8211;table piwik_log_visit</li>
+<li>設定上傳至HDFS的路徑</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>sqoop import &#8211;connect <a class="reference external" href="jdbc:mysql://mysql.example.com/sqoop">jdbc:mysql://mysql.example.com/sqoop</a> &#8211;username sqoop &#8211;password sqoop &#8211;table cities &#8211;target-dir /etl/input/cities</li>
+<li>-p指令可以透過終端機輸入密碼或透過&#8211;password-file my-sqoop-password</li>
+<li>bin/sqoop import &#8211;connect <a class="reference external" href="jdbc:mysql://192.168.57.101/piwik">jdbc:mysql://192.168.57.101/piwik</a> &#8211;table piwik_log_visit &#8211;username root &#8211;password <a class="reference external" href="mailto:shunfa&#37;&#52;&#48;foxconn">shunfa<span>&#64;</span>foxconn</a> &#8211;hbase-table hbase_test_table &#8211;column-family test_table_col1 &#8211;hbase-row-key idvisit &#8211;hbase-create-table</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="todo">
+<h2>Todo<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Hive?</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference external" href="http://www.slideshare.net/lfcipriani/hbase-introduction-to-column-oriented-databases">投影片有好圖</a></li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">shunfaDOC 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, shunfa.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

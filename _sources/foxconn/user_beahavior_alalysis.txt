@@ -1,0 +1,181 @@
+============================
+使用者行為分析 - 後台資料轉移
+============================
+需求：
+公有雲(阿里雲)的儲存空間需要計費，加上其架構為RDBMS，若沒有定時整理維護，RDBMS架構無法處理資料過大的問題，所以在公有雲上的資料每隔一段時間(3個月)必須轉到私有雲(雲起 or Dick's OpenStack)自行維護，並在特定的時間內倒回統計後的資料回到公有雲。
+
+* 任務一：公私有雲間的資料轉移 => 資料流向：公有雲 -> 私有雲
+ * 透過Sqoop => RDBMD(MySQL)@公有雲 -> NoSQL(Hbase)@私有雲
+  * 環境初始化 - 環境建立階段
+
+    1) [公有雲]  取得公有雲MySQL環境
+    2) [私有雲]  建立Hadoop, Zookeeper, Hbase, Sqoop環境
+
+  * 資料搬移階段
+
+    3) [私有雲]  利用Sqoop Script 將公有雲上的資料傳回私有雲上
+
+  * 資料維護階段
+  
+    4) [私有雲]  利用Sqoop 作差異化更新(尚未Survey, Ch3 新增, Ch5.4 更新)
+    5) [私有雲]  資料壓縮與封存
+
+  * 資料萃取及顯示階段
+  
+    6) [私有雲]  透過統計或計算分析工具提煉資料
+    7) [私有雲]  與前端整合進行資料呈現(可考慮Solr檢索、其他圖形化工具顯示)
+ 
+
+* 任務二：公私有雲間的資料轉移 => 資料流向：私有雲 -> 公有雲
+
+   8) [私有雲]  定義回傳內容，將資料導回公有雲
+   9) [公有雲]  與前端整合進行資料呈現
+
+* 無法定義在任何階段的測試
+ * 不同語系測試
+ * 資料型態：語系, Date, timestamp
+ * HBase 倒回 MySQL的值是否可以正常
+ * 增量轉移的資料量上限
+ * Log機制
+
+
+MySQL - Piwik
+===================
+
+Tables
+------------------
+| piwik_access                  
+| piwik_archive_blob_2013_12    
+| piwik_archive_blob_2014_01    
+| piwik_archive_numeric_2013_12 
+| piwik_archive_numeric_2014_01 
+| piwik_goal                    
+| piwik_log_action              
+| piwik_log_conversion          
+| piwik_log_conversion_item     
+| piwik_log_link_visit_action   
+| piwik_log_profiling           
+| piwik_log_visit               
+| piwik_logger_message          
+| piwik_option                  
+| piwik_report                  
+| piwik_segment                 
+| piwik_session                 
+| piwik_site                    
+| piwik_site_url                
+| piwik_user                    
+| piwik_user_dashboard          
+| piwik_user_language
+
+進度
+======================
+
+任務一 
+-----------------
+
+1. [公有雲]  取得公有雲MySQL環境
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* 目前已在vm上建立模擬公有雲的MySQL環境，並把Piwik資料庫匯入。
+
+
+2. [私有雲]  建立Hadoop, Zookeeper, Hbase, Sqoop環境
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* 目前已經建立完成，正常使用中
+* `安裝過程紀錄文件  <../bigData_sqoop_mysql_transform_hdfs_hbse.html>`_
+
+3. [私有雲]  利用Sqoop Script 將公有雲上的資料傳回私有雲上
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* 針對MySQL表單建立對應的Hbase表單欄位
+ * 根據MySQL表單名稱建立HBase表單名稱，RowKey為根據MySQL PRIMARY欄位進行設計，若為多重Key值，則以 ``,`` 分開
+
+.. code-block:: ..
+
+  $ sqoop import \
+    --connect jdbc:mysql://192.168.57.101/piwik \
+    --table piwik_access --username root \
+    --password shunfa@foxconn \
+    --hbase-table piwik_access \
+    --column-family piwik_access_col \
+    --hbase-row-key login,idsite --hbase-create-table
+
+.. code-block:: ..
+
+  $ sqoop import \
+    --connect jdbc:mysql://192.168.57.101/piwik \
+    --table piwik_archive_blob_2013_12 \
+    --username root --password shunfa@foxconn \
+    --hbase-table piwik_archive_blob_2013_12 \
+    --column-family piwik_archive_blob_2013_12_col \
+    --hbase-row-key idarchive,name --hbase-create-table
+  
+  14/01/24 14:47:22 INFO mapreduce.ImportJobBase: Transferred 0 bytes in 43.5708 seconds (0 bytes/sec)
+  14/01/24 14:47:22 INFO mapreduce.ImportJobBase: Retrieved 16542 records.
+
+
+.. code-block:: ..
+
+  $ sqoop import \
+    --connect jdbc:mysql://192.168.57.101/piwik \
+    --table piwik_archive_blob_2014_01 \
+    --username root --password shunfa@foxconn \
+    --hbase-table piwik_archive_blob_2014_01 \
+    --column-family piwik_archive_blob_2014_01_col \
+    --hbase-row-key idarchive,name --hbase-create-table
+
+  14/01/24 14:58:56 INFO mapreduce.ImportJobBase: Transferred 0 bytes in 39.3163 seconds (0 bytes/sec)
+  14/01/24 14:58:56 INFO mapreduce.ImportJobBase: Retrieved 13213 records.
+
+*其他略*
+
+* 執行結果
+
+.. code-block:: ..
+
+  hbase(main):001:0> list
+  TABLE                                                                                                                                  
+  piwik_access                                                                                                                           
+  piwik_archive_blob_2013_12                                                                                                             
+  piwik_archive_blob_2014_01                                                                                                             
+  piwik_archive_numeric_2013_12                                                                                                          
+  piwik_archive_numeric_2014_01                                                                                                          
+  piwik_goal                                                                                                                             
+  piwik_log_action                                                                                                                       
+  piwik_log_conversion                                                                                                                   
+  piwik_log_conversion_item                                                                                                              
+  piwik_log_link_visit_action                                                                                                            
+  piwik_log_visit                                                                                                                        
+  piwik_logger_message                                                                                                                   
+  piwik_option                                                                                                                           
+  piwik_report                                                                                                                           
+  piwik_segment                                                                                                               
+  piwik_session                                                                                                                          
+  piwik_site                                                                                                                             
+  piwik_user                                                                                                                             
+  piwik_user_dashboard                                                                                                                   
+  piwik_user_language                                                                                                                    
+  20 row(s) in 2.5750 seconds
+
+  => ["piwik_access", "piwik_archive_blob_2013_12", "piwik_archive_blob_2014_01", "piwik_archive_numeric_2013_12", "piwik_archive_numeric_2014_01", "piwik_goal",   "piwik_log_action", "piwik_log_conversion", "piwik_log_conversion_item", "piwik_log_link_visit_action", "piwik_log_visit", "piwik_logger_message", "piwik_option", "piwik_report", "piwik_segment", "piwik_session", "piwik_site", "piwik_user", "piwik_user_dashboard", "piwik_user_language"]
+
+*註：HBase每隔一段時間才會將資料寫入HDFS*
+
+HBase架構，以表單 ``piwik_goal`` 為例
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Value -> Table, Rowkey, Family, Column, Timestamp
+ * piwik_goal, idsite_idgoal, piwik_goal_col, {name, match_attribute, pattern, pattern_type, case_sensitive, allow_multiple, revenue, deleted}, timestamp
+* Column Oriented Storage (`link <./_images/row-and-column-layouts.jpg>`_)
+
+.. image::./_images/row-and-column-layouts.jpg
+
+
+4. [私有雲]  利用Sqoop 作差異化更新
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+*Last Update: 2014-01-24*
+
+
